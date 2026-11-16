@@ -9,8 +9,11 @@ Based on Benjamin Renard's [MIT-licensed hass-ftp](https://github.com/brenard/ha
 
 ## Installation
 
-1. Click install.
-1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "FTP".
+For Home Assistant 2026.11 or later, add `https://github.com/HackANurse/haos-ftp`
+through _Settings_ → _Marketplace_ → _Add from link_ (type _Integration_) and install it.
+For earlier versions, add the same URL as a custom _Integration_ repository in HACS
+and download it there. Restart Home Assistant if prompted, then go to
+_Settings_ → _Devices & services_ → _Add integration_ and search for _FTP_.
 
 ## Configuration is done in the UI
 

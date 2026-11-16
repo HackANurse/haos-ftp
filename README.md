@@ -45,16 +45,20 @@ The original integration was initially based on Home Assistant's
 
 ## Installation
 
-### Using HACS
+### Home Assistant 2026.11 and later: Marketplace
 
-Firstly, you have to add the following custom repository :
+Open _Settings_ → _Marketplace_ → _Add from link_. Enter
+`https://github.com/HackANurse/haos-ftp`, connect GitHub if prompted, and add it as an
+_Integration_. Open the repository in Marketplace and install it. Restart Home Assistant
+if prompted. Then go to _Settings_ → _Devices & services_ → _Add integration_ and search
+for _FTP_.
 
-- Repository : `https://github.com/HackANurse/haos-ftp`
-- Category : _Integration_
+### Home Assistant before 2026.11: HACS
 
-After, click on _Explore & download repositories_, search and install _FTP_
-integration. Finally, go to _Settings_, _Devices & services_, click on _+ Add integration_ button
-and search for _FTP_.
+In HACS, open _Custom repositories_, enter
+`https://github.com/HackANurse/haos-ftp`, and select _Integration_ as the category.
+Download _FTP Backup agent_ from HACS, restart Home Assistant, then go to
+_Settings_ → _Devices & services_ → _Add integration_ and search for _FTP_.
 
 ### Manually
 
