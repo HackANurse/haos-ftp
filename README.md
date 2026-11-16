@@ -2,6 +2,27 @@
 
 This is an updated version of [Benjamin Renard's hass-ftp](https://github.com/brenard/hass-ftp). The original author is Benjamin Renard (@brenard); his MIT copyright notice remains in [LICENSE](LICENSE).
 
+## Differences from the original
+
+The original integration already provides a Home Assistant backup agent with FTP upload, listing, download, and deletion. This fork retains those features and adds:
+
+| Area | Original | This fork |
+| --- | --- | --- |
+| Connection security | Plain FTP | Plain FTP, optional or required explicit FTPS, and implicit FTPS |
+| Data transfer | Passive mode through `aioftp` | Passive or active mode through Python's `ftplib` |
+| TLS certificates | No certificate settings | System CA verification, optional custom CA, client certificate, private key, and encrypted-key password |
+| Server compatibility | UTF-8 and `aioftp` listing behavior | Configurable UTF-8, Latin-1, or Windows-1252; optional NLST listing mode |
+| Backup upload | Supported | Progress reporting for the current Home Assistant backup-agent interface, plus cleanup after a failed upload |
+| Backup download | Supported | Uses the same generated `.tar` filename as upload |
+
+The transport now stages each transfer in a temporary file. It needs free temporary disk space at least as large as the backup. The fork also adds automated transport tests and Italian configuration labels.
+
+## AI assistance and attribution
+
+The changes in this fork were created with the assistance of artificial intelligence (OpenAI Codex) and checked with automated tests. The original code and authorship remain credited to Benjamin Renard in the repository history and MIT [license](LICENSE). This fork is maintained independently and is not endorsed by the original author.
+
+If you would like to support maintenance of **this fork**, you can [buy me a coffee](https://buymeacoffee.com/andybegh). This link belongs to the fork maintainer, not to Benjamin Renard.
+
 ## Connection options
 
 - Protocol: plain FTP, explicit TLS when available, required explicit TLS, or required implicit TLS.
