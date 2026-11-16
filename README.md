@@ -1,3 +1,5 @@
+<img src="assets/haos-ftp-icon.svg" alt="haos-ftp icon" width="96" align="right">
+
 # FTP/FTPS Backup agent for Home Assistant
 
 This is an updated version of [Benjamin Renard's hass-ftp](https://github.com/brenard/hass-ftp). The original author is Benjamin Renard (@brenard); his MIT copyright notice remains in [LICENSE](LICENSE).
