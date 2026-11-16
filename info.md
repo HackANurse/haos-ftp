@@ -24,14 +24,14 @@ When adding the integration, you will have to provide :
 
 ---
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/HackANurse/hass-ftp.svg?style=for-the-badge
-[commits]: https://github.com/HackANurse/hass-ftp/commits/main
+[commits-shield]: https://img.shields.io/github/commit-activity/y/HackANurse/haos-ftp.svg?style=for-the-badge
+[commits]: https://github.com/HackANurse/haos-ftp/commits/main
 [hacs]: https://hacs.xyz
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
-[license]: https://github.com/HackANurse/hass-ftp/blob/main/LICENSE
-[license-shield]: https://img.shields.io/github/license/HackANurse/hass-ftp.svg?style=for-the-badge
+[license]: https://github.com/HackANurse/haos-ftp/blob/main/LICENSE
+[license-shield]: https://img.shields.io/github/license/HackANurse/haos-ftp.svg?style=for-the-badge
 [maintenance-shield]: https://img.shields.io/badge/maintainer-%40HackANurse-blue.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/HackANurse/hass-ftp.svg?style=for-the-badge
-[releases]: https://github.com/HackANurse/hass-ftp/releases
+[releases-shield]: https://img.shields.io/github/release/HackANurse/haos-ftp.svg?style=for-the-badge
+[releases]: https://github.com/HackANurse/haos-ftp/releases
 [user_profile]: https://github.com/HackANurse
 

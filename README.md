@@ -47,7 +47,7 @@ The original integration was initially based on Home Assistant's
 
 Firstly, you have to add the following custom repository :
 
-- Repository : `https://github.com/HackANurse/hass-ftp`
+- Repository : `https://github.com/HackANurse/haos-ftp`
 - Category : _Integration_
 
 After, click on _Explore & download repositories_, search and install _FTP_
