@@ -41,6 +41,8 @@ L'integrazione carica, elenca, scarica ed elimina i backup di Home Assistant e m
 
 ### Installazione
 
+Le versioni seguono il formato `aaaa.mm.nn`: anno, mese e progressivo a due cifre che riparte da `01` ogni mese. Per esempio, `2026.11.03` è il terzo rilascio di novembre 2026. Il numero della versione nel `manifest.json` coincide con il tag del rilascio GitHub.
+
 #### Home Assistant 2026.11 o successivo: Marketplace
 
 Apri _Impostazioni_ → _Marketplace_ → _Aggiungi da link_. Inserisci `https://github.com/HackANurse/haos-ftp`, collega GitHub se richiesto e aggiungi il repository come _Integrazione_. Apri la sua scheda nel Marketplace e installalo. Riavvia Home Assistant se richiesto; poi vai in _Impostazioni_ → _Dispositivi e servizi_ → _Aggiungi integrazione_ e cerca _FTP_.
@@ -113,6 +115,8 @@ The original integration was initially based on Home Assistant's
 [webdav](https://www.home-assistant.io/integrations/webdav/) integration.
 
 ### Installation
+
+Versions use the `yyyy.mm.nn` format: year, month, and a two-digit sequence that starts again at `01` each month. For example, `2026.11.03` is the third release of November 2026. The version in `manifest.json` matches the GitHub release tag.
 
 #### Home Assistant 2026.11 and later: Marketplace
 
