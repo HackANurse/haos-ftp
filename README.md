@@ -9,7 +9,10 @@ This is an updated version of [Benjamin Renard's hass-ftp](https://github.com/br
 - Server charset: UTF-8, Latin-1, or Windows-1252.
 - Compatibility mode uses NLST rather than MLSD for directory listings.
 - TLS minimum version 1.2 or 1.3. Certificates are verified against the system CA store. The optional explicit TLS mode falls back to plain FTP only when the server rejects AUTH TLS as unsupported; choose required TLS to prohibit plaintext.
+- Optional PEM certificate files: a custom CA for server verification, plus a client certificate and private key for servers that require mutual TLS. An encrypted client key can have a password.
 - Custom connection name, host/IP, port, and backup directory. Implicit FTPS servers normally use port 990.
+
+Place PEM files in a path readable by Home Assistant, such as `/config/ssl/`, then enter their **absolute paths** in the integration's connection settings. Certificate contents and private keys are never stored in this repository. Client certificate and key paths must be provided together. A custom certificate configuration will never fall back to plain FTP, even when “explicit TLS if available” is selected. Certificate files are loaded at each new connection, so replacing them takes effect on the next backup operation.
 
 The integration uploads, lists, downloads, and deletes Home Assistant backups. It reports upload progress while transferring to the FTP server. The current transport stages each transfer in a temporary file on the HAOS filesystem; make sure free temporary space is at least the size of the largest backup. Backups are not loaded into memory as one blob.
 

@@ -25,7 +25,11 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_BACKUP_PATH,
+    CONF_CA_FILE,
     CONF_CHARSET,
+    CONF_CLIENT_CERT,
+    CONF_CLIENT_KEY,
+    CONF_CLIENT_KEY_PASSWORD,
     CONF_COMPATIBILITY_MODE,
     CONF_DEFAULTS,
     CONF_NAME,
@@ -34,7 +38,7 @@ from .const import (
     CONF_TRANSFER_MODE,
     DOMAIN,
 )
-from .helpers import FtpClient
+from .helpers import CertificateConfigurationError, FtpClient
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,11 +58,19 @@ class BaseFtpConfigFlow:
             charset=user_input.get(CONF_CHARSET, "utf-8"),
             compatibility_mode=user_input.get(CONF_COMPATIBILITY_MODE, False),
             tls_version=user_input.get(CONF_TLS_VERSION, "1.2"),
+            ca_file=user_input.get(CONF_CA_FILE, ""),
+            client_cert=user_input.get(CONF_CLIENT_CERT, ""),
+            client_key=user_input.get(CONF_CLIENT_KEY, ""),
+            client_key_password=user_input.get(CONF_CLIENT_KEY_PASSWORD, ""),
         )
         try:
             _LOGGER.info("Check FTP connection on %s", client)
             async with client.connect():
                 pass
+        except CertificateConfigurationError:
+            _LOGGER.exception("Invalid certificate configuration")
+            self._errors["base"] = "invalid_certificate"
+            return False
         except all_errors:
             _LOGGER.exception("Connection error")
             self._errors["base"] = "cannot_connect"
@@ -98,6 +110,12 @@ class BaseFtpConfigFlow:
                 ): bool,
                 vol.Required(CONF_TLS_VERSION, default=defaults.get(CONF_TLS_VERSION)): vol.In(
                     ["1.2", "1.3"]
+                ),
+                vol.Optional(CONF_CA_FILE, default=defaults.get(CONF_CA_FILE, "")): str,
+                vol.Optional(CONF_CLIENT_CERT, default=defaults.get(CONF_CLIENT_CERT, "")): str,
+                vol.Optional(CONF_CLIENT_KEY, default=defaults.get(CONF_CLIENT_KEY, "")): str,
+                vol.Optional(CONF_CLIENT_KEY_PASSWORD): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
                 ),
             }
         )
@@ -160,6 +178,15 @@ class OptionsFlow(BaseFtpConfigFlow, OptionsFlow):
             if not user_input.get(CONF_PASSWORD):
                 _LOGGER.debug("User do not enter password, keep current configured one")
                 user_input[CONF_PASSWORD] = self.config_entry.data.get(CONF_PASSWORD)
+            if not user_input.get(CONF_CLIENT_KEY_PASSWORD):
+                same_key = user_input.get(CONF_CLIENT_CERT, "") == self.config_entry.data.get(
+                    CONF_CLIENT_CERT, ""
+                ) and user_input.get(CONF_CLIENT_KEY, "") == self.config_entry.data.get(
+                    CONF_CLIENT_KEY, ""
+                )
+                user_input[CONF_CLIENT_KEY_PASSWORD] = (
+                    self.config_entry.data.get(CONF_CLIENT_KEY_PASSWORD, "") if same_key else ""
+                )
             if await self.async_check_user_input(user_input) and not self._errors:
                 # update config entry
                 self.hass.config_entries.async_update_entry(self.config_entry, data=user_input)

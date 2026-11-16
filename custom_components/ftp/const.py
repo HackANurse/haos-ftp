@@ -18,6 +18,10 @@ CONF_TRANSFER_MODE = "transfer_mode"
 CONF_CHARSET = "charset"
 CONF_COMPATIBILITY_MODE = "compatibility_mode"
 CONF_TLS_VERSION = "tls_version"
+CONF_CA_FILE = "ca_file"
+CONF_CLIENT_CERT = "client_cert"
+CONF_CLIENT_KEY = "client_key"
+CONF_CLIENT_KEY_PASSWORD = "client_key_password"
 
 CONF_DEFAULTS = {
     CONF_PORT: 21,

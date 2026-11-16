@@ -141,3 +141,89 @@ def test_compatibility_listing_uses_nlst():
     connection.ftp = Transport()
     paths = asyncio.run(connection.list("/backups"))
     assert str(paths[0][0]) == "/backups/example.metadata.json"
+
+
+def test_custom_ca_and_client_certificate_are_loaded():
+    class Context:
+        check_hostname = True
+        verify_mode = helpers.ssl.CERT_REQUIRED
+
+        def __init__(self):
+            self.calls = []
+
+        def load_verify_locations(self, cafile):
+            self.calls.append(("ca", cafile))
+
+        def load_cert_chain(self, certfile, keyfile, password):
+            self.calls.append(("client", certfile, keyfile, password))
+
+    context = Context()
+    with patch.object(helpers.ssl, "create_default_context", return_value=context):
+        result = helpers.tls_context(
+            "1.2",
+            "/config/ssl/ca.pem",
+            "/config/ssl/client.pem",
+            "/config/ssl/client.key",
+            "secret",
+        )
+    assert result is context
+    assert context.calls == [
+        ("ca", "/config/ssl/ca.pem"),
+        ("client", "/config/ssl/client.pem", "/config/ssl/client.key", "secret"),
+    ]
+    assert context.check_hostname and context.verify_mode == helpers.ssl.CERT_REQUIRED
+
+
+def test_client_certificate_requires_private_key():
+    with pytest.raises(helpers.CertificateConfigurationError):
+        helpers.tls_context("1.2", "", "/config/ssl/client.pem", "", "")
+
+
+def test_certificate_files_are_not_allowed_with_plain_ftp():
+    with pytest.raises(helpers.CertificateConfigurationError):
+        helpers.create_ftp(
+            "example.org",
+            21,
+            "user",
+            "secret",
+            "plain",
+            "passive",
+            "utf-8",
+            "1.2",
+            "/config/ssl/ca.pem",
+        )
+
+
+def test_optional_tls_with_custom_ca_never_downgrades_to_plain():
+    class UnsupportedFTP(FakeFTP):
+        def auth(self):
+            raise error_perm("502 AUTH not implemented")
+
+    with (
+        patch.object(helpers, "FTP_TLS", UnsupportedFTP),
+        patch.object(helpers, "tls_context", return_value=object()),
+        patch.object(helpers, "FTP", FakeFTP),
+    ):
+        with pytest.raises(error_perm):
+            helpers.create_ftp(
+                "example.org",
+                21,
+                "user",
+                "secret",
+                "explicit_optional",
+                "passive",
+                "utf-8",
+                "1.2",
+                "/config/ssl/ca.pem",
+            )
+
+
+def test_default_context_verifies_server_certificate_and_hostname():
+    context = helpers.tls_context("1.2")
+    assert context.verify_mode == helpers.ssl.CERT_REQUIRED
+    assert context.check_hostname
+
+
+def test_missing_ca_file_is_a_certificate_configuration_error():
+    with pytest.raises(helpers.CertificateConfigurationError):
+        helpers.tls_context("1.2", "/config/ssl/missing-ca-for-test.pem")

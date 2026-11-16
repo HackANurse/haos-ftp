@@ -12,7 +12,11 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import (
     CONF_BACKUP_PATH,
+    CONF_CA_FILE,
     CONF_CHARSET,
+    CONF_CLIENT_CERT,
+    CONF_CLIENT_KEY,
+    CONF_CLIENT_KEY_PASSWORD,
     CONF_COMPATIBILITY_MODE,
     CONF_PROTOCOL,
     CONF_TLS_VERSION,
@@ -20,7 +24,7 @@ from .const import (
     DATA_BACKUP_AGENT_LISTENERS,
     DOMAIN,
 )
-from .helpers import FtpClient, async_ensure_path_exists
+from .helpers import CertificateConfigurationError, FtpClient, async_ensure_path_exists
 
 type FtpConfigEntry = ConfigEntry[FtpClient]
 
@@ -40,6 +44,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: FtpConfigEntry) -> bool:
         charset=entry.data.get(CONF_CHARSET, "utf-8"),
         compatibility_mode=entry.data.get(CONF_COMPATIBILITY_MODE, False),
         tls_version=entry.data.get(CONF_TLS_VERSION, "1.2"),
+        ca_file=entry.data.get(CONF_CA_FILE, ""),
+        client_cert=entry.data.get(CONF_CLIENT_CERT, ""),
+        client_key=entry.data.get(CONF_CLIENT_KEY, ""),
+        client_key_password=entry.data.get(CONF_CLIENT_KEY_PASSWORD, ""),
     )
     try:
         _LOGGER.info("Initialize FTP connection on %s", client)
@@ -51,6 +59,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: FtpConfigEntry) -> bool:
                     translation_domain=DOMAIN,
                     translation_key="cannot_access_or_create_backup_path",
                 )
+    except CertificateConfigurationError as err:
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="invalid_certificate",
+        ) from err
     except all_errors as err:
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN,

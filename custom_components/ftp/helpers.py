@@ -8,9 +8,13 @@ import ssl
 import tempfile
 from ftplib import FTP, FTP_TLS, all_errors, error_perm
 from functools import partial
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 CHUNK_SIZE = 256 * 1024
+
+
+class CertificateConfigurationError(OSError):
+    """The configured certificate files cannot be used."""
 
 
 class ImplicitFTP_TLS(FTP_TLS):
@@ -38,10 +42,40 @@ class ImplicitFTP_TLS(FTP_TLS):
         return None
 
 
-def tls_context(version: str) -> ssl.SSLContext:
+def tls_context(
+    version: str,
+    ca_file: str = "",
+    client_cert: str = "",
+    client_key: str = "",
+    client_key_password: str = "",
+) -> ssl.SSLContext:
+    if bool(client_cert) != bool(client_key):
+        raise CertificateConfigurationError(
+            "Client certificate and private key must both be configured"
+        )
+    if client_key_password and not client_key:
+        raise CertificateConfigurationError(
+            "A private key is required when a key password is configured"
+        )
+    for filename in (ca_file, client_cert, client_key):
+        if filename and not Path(filename).is_absolute():
+            raise CertificateConfigurationError("Certificate paths must be absolute")
     context = ssl.create_default_context()
     versions = {"1.2": ssl.TLSVersion.TLSv1_2, "1.3": ssl.TLSVersion.TLSv1_3}
     context.minimum_version = versions[version]
+    try:
+        if ca_file:
+            context.load_verify_locations(cafile=ca_file)
+        if client_cert:
+            context.load_cert_chain(
+                certfile=client_cert,
+                keyfile=client_key,
+                password=client_key_password or None,
+            )
+    except (OSError, ssl.SSLError) as err:
+        raise CertificateConfigurationError(
+            "Could not load the configured TLS certificate files"
+        ) from err
     return context
 
 
@@ -54,16 +88,24 @@ def create_ftp(
     transfer_mode: str,
     charset: str,
     tls_version: str,
+    ca_file: str = "",
+    client_cert: str = "",
+    client_key: str = "",
+    client_key_password: str = "",
 ):
     """Open a connection and apply the chosen security and transfer settings."""
     if protocol not in {"plain", "explicit_optional", "explicit_required", "implicit"}:
         raise ValueError(f"Unsupported protocol: {protocol}")
     if transfer_mode not in {"passive", "active"}:
         raise ValueError(f"Unsupported transfer mode: {transfer_mode}")
+    if protocol == "plain" and any((ca_file, client_cert, client_key, client_key_password)):
+        raise CertificateConfigurationError("Certificate settings require an FTPS protocol")
     cls = ImplicitFTP_TLS if protocol == "implicit" else FTP if protocol == "plain" else FTP_TLS
     kwargs = {"timeout": 30, "encoding": charset}
     if cls is not FTP:
-        kwargs["context"] = tls_context(tls_version)
+        kwargs["context"] = tls_context(
+            tls_version, ca_file, client_cert, client_key, client_key_password
+        )
     ftp = cls(**kwargs)
     try:
         ftp.connect(host, port)
@@ -73,8 +115,10 @@ def create_ftp(
                 ftp.auth()
                 protected = True
             except error_perm as err:
-                if protocol != "explicit_optional" or not str(err).startswith(
-                    ("500", "502", "504")
+                if (
+                    protocol != "explicit_optional"
+                    or any((ca_file, client_cert, client_key, client_key_password))
+                    or not str(err).startswith(("500", "502", "504"))
                 ):
                     raise
                 ftp.close()
@@ -107,6 +151,10 @@ class FtpConnection:
             c.transfer_mode,
             c.charset,
             c.tls_version,
+            c.ca_file,
+            c.client_cert,
+            c.client_key,
+            c.client_key_password,
         )
         return self
 
@@ -239,12 +287,20 @@ class FtpClient:
         charset="utf-8",
         compatibility_mode=False,
         tls_version="1.2",
+        ca_file="",
+        client_cert="",
+        client_key="",
+        client_key_password="",
     ):
         self.hass, self.host, self.port = hass, host, int(port)
         self.username, self.password = username, password
         self.protocol, self.transfer_mode = protocol, transfer_mode
         self.charset, self.compatibility_mode = charset, compatibility_mode
         self.tls_version = tls_version
+        self.ca_file = ca_file
+        self.client_cert = client_cert
+        self.client_key = client_key
+        self.client_key_password = client_key_password
 
     def connect(self) -> FtpConnection:
         return FtpConnection(self)

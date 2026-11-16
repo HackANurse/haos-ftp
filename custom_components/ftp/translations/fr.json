@@ -13,16 +13,25 @@
           "transfer_mode": "Mode de transfert",
           "charset": "Encodage du serveur",
           "compatibility_mode": "Mode de compatibilité (liste NLST)",
-          "tls_version": "Version TLS minimale"
+          "tls_version": "Version TLS minimale",
+          "ca_file": "Chemin du certificat CA personnalisé",
+          "client_cert": "Chemin du certificat client",
+          "client_key": "Chemin de la clé privée du client",
+          "client_key_password": "Mot de passe de la clé privée"
         },
         "data_description": {
           "host": "Le nom d'hôte (ou l'adresse IP) du serveur FTP",
-          "backup_path": "Définir le chemin du dossier où seront stockées les sauvegardes (créé automatiquement s'il n'existe pas)."
+          "backup_path": "Définir le chemin du dossier où seront stockées les sauvegardes (créé automatiquement s'il n'existe pas).",
+          "ca_file": "Chemin absolu vers un fichier CA PEM, par exemple /config/ssl/ca.pem. Les CA du système restent approuvées.",
+          "client_cert": "Chemin absolu vers un certificat client PEM. À configurer avec la clé privée.",
+          "client_key": "Chemin absolu vers la clé privée PEM du certificat client.",
+          "client_key_password": "Mot de passe de la clé privée chiffrée ; laisser vide pour conserver le mot de passe lors de la modification."
         }
       }
     },
     "error": {
-      "cannot_connect": "Impossible de se connecter au serveur FTP."
+      "cannot_connect": "Impossible de se connecter au serveur FTP.",
+      "invalid_certificate": "Configuration des certificats invalide"
     },
     "abort": {
       "already_configured": "Une connexion à ce serveur FTP est déjà configuré."
@@ -43,17 +52,26 @@
           "transfer_mode": "Mode de transfert",
           "charset": "Encodage du serveur",
           "compatibility_mode": "Mode de compatibilité (liste NLST)",
-          "tls_version": "Version TLS minimale"
+          "tls_version": "Version TLS minimale",
+          "ca_file": "Chemin du certificat CA personnalisé",
+          "client_cert": "Chemin du certificat client",
+          "client_key": "Chemin de la clé privée du client",
+          "client_key_password": "Mot de passe de la clé privée"
         },
         "data_description": {
           "host": "Le nom d'hôte (ou l'adresse IP) du serveur FTP.",
           "password": "Laisser vide pour conserver le mot de passe actuellement configuré.",
-          "backup_path": "Le chemin du dossier où seront stockées les sauvegardes (créé automatiquement s'il n'existe pas)."
+          "backup_path": "Le chemin du dossier où seront stockées les sauvegardes (créé automatiquement s'il n'existe pas).",
+          "ca_file": "Chemin absolu vers un fichier CA PEM, par exemple /config/ssl/ca.pem. Les CA du système restent approuvées.",
+          "client_cert": "Chemin absolu vers un certificat client PEM. À configurer avec la clé privée.",
+          "client_key": "Chemin absolu vers la clé privée PEM du certificat client.",
+          "client_key_password": "Mot de passe de la clé privée chiffrée ; laisser vide pour conserver le mot de passe lors de la modification."
         }
       }
     },
     "error": {
-      "cannot_connect": "Impossible de se connecter au serveur FTP."
+      "cannot_connect": "Impossible de se connecter au serveur FTP.",
+      "invalid_certificate": "Configuration des certificats invalide"
     }
   },
   "exceptions": {
@@ -62,6 +80,9 @@
     },
     "cannot_access_or_create_backup_path": {
       "message": "Impossible d'accéder ou de créer le dossier de stockage des sauvegardes. Merci de vérifier le chemin saisi et les permissions d'accès à celui-ci."
+    },
+    "invalid_certificate": {
+      "message": "Impossible de charger les certificats TLS configurés"
     }
   }
 }

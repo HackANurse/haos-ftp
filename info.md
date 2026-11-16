@@ -20,6 +20,7 @@ When adding the integration, you will have to provide :
 - The username and password to login
 - The path of the remote directory where to store your backups
 - The FTP/FTPS protocol, transfer mode, charset, compatibility mode, and TLS minimum version
+- Optional custom CA certificate, client certificate, private key, and key password (absolute paths under `/config/ssl/`)
 
 ---
 

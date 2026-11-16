@@ -1,0 +1,89 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "host": "Indirizzo/IP",
+          "port": "Porta",
+          "username": "Nome utente",
+          "password": "Password",
+          "backup_path": "Percorso dei backup",
+          "name": "Nome connessione",
+          "protocol": "Protocollo",
+          "transfer_mode": "Modalità di trasferimento",
+          "charset": "Codifica del server",
+          "compatibility_mode": "Modalità compatibilità (elenco NLST)",
+          "tls_version": "Versione TLS minima",
+          "ca_file": "Percorso certificato CA personalizzato",
+          "client_cert": "Percorso certificato client",
+          "client_key": "Percorso chiave privata client",
+          "client_key_password": "Password della chiave privata"
+        },
+        "data_description": {
+          "host": "Nome host o indirizzo IP del server FTP.",
+          "backup_path": "Cartella remota in cui salvare i backup; viene creata se non esiste.",
+          "ca_file": "Percorso assoluto di un certificato CA PEM, ad esempio /config/ssl/ca.pem. Le CA di sistema restano attendibili.",
+          "client_cert": "Percorso assoluto del certificato client PEM; richiede anche la chiave privata.",
+          "client_key": "Percorso assoluto della chiave privata PEM del certificato client.",
+          "client_key_password": "Password della chiave privata cifrata; durante la modifica lascia vuoto per mantenere quella attuale.",
+          "password": "Lascia vuoto per mantenere la password già configurata."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Connessione al server FTP non riuscita",
+      "invalid_certificate": "Configurazione dei certificati non valida"
+    },
+    "abort": {
+      "already_configured": "Una connessione a questo server FTP è già configurata"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Modifica la connessione al server FTP.",
+        "data": {
+          "host": "Indirizzo/IP",
+          "port": "Porta",
+          "username": "Nome utente",
+          "password": "Password",
+          "backup_path": "Percorso dei backup",
+          "name": "Nome connessione",
+          "protocol": "Protocollo",
+          "transfer_mode": "Modalità di trasferimento",
+          "charset": "Codifica del server",
+          "compatibility_mode": "Modalità compatibilità (elenco NLST)",
+          "tls_version": "Versione TLS minima",
+          "ca_file": "Percorso certificato CA personalizzato",
+          "client_cert": "Percorso certificato client",
+          "client_key": "Percorso chiave privata client",
+          "client_key_password": "Password della chiave privata"
+        },
+        "data_description": {
+          "host": "Nome host o indirizzo IP del server FTP.",
+          "password": "Lascia vuoto per mantenere la password già configurata.",
+          "backup_path": "Cartella remota in cui salvare i backup; viene creata se non esiste.",
+          "ca_file": "Percorso assoluto di un certificato CA PEM, ad esempio /config/ssl/ca.pem. Le CA di sistema restano attendibili.",
+          "client_cert": "Percorso assoluto del certificato client PEM; richiede anche la chiave privata.",
+          "client_key": "Percorso assoluto della chiave privata PEM del certificato client.",
+          "client_key_password": "Password della chiave privata cifrata; durante la modifica lascia vuoto per mantenere quella attuale."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Connessione al server FTP non riuscita",
+      "invalid_certificate": "Configurazione dei certificati non valida"
+    }
+  },
+  "exceptions": {
+    "cannot_connect": {
+      "message": "Impossibile connettersi al server FTP"
+    },
+    "cannot_access_or_create_backup_path": {
+      "message": "Impossibile accedere o creare la cartella dei backup. Controlla percorso e permessi."
+    },
+    "invalid_certificate": {
+      "message": "Impossibile caricare i certificati TLS configurati"
+    }
+  }
+}
