@@ -1,17 +1,18 @@
 {
   "domain": "ftp",
   "name": "FTP",
-  "codeowners": ["@brenard"],
+  "codeowners": ["@HackANurse"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/brenard/hass-ftp",
+  "documentation": "https://github.com/HackANurse/hass-ftp",
   "homekit": {},
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/brenard/hass-ftp/issues",
-  "loggers": ["aioftp"],
-  "requirements": ["aioftp==0.25.1"],
+  "issue_tracker": "https://github.com/HackANurse/hass-ftp/issues",
+  "loggers": [],
+  "requirements": [],
   "ssdp": [],
-  "version": "2025.5.2",
+  "version": "2026.11.1",
   "zeroconf": []
 }
+

@@ -1,99 +1,270 @@
-"""Helper functions for the FTP component."""
+"""FTP and FTPS transport for backup files."""
 
-import logging
+from __future__ import annotations
 
-from aioftp import Client
-from aioftp.errors import AIOFTPException
-from homeassistant.core import HomeAssistant
+import asyncio
+import socket
+import ssl
+import tempfile
+from ftplib import FTP, FTP_TLS, all_errors, error_perm
+from functools import partial
+from pathlib import PurePosixPath
 
-_LOGGER = logging.getLogger(__name__)
+CHUNK_SIZE = 256 * 1024
+
+
+class ImplicitFTP_TLS(FTP_TLS):
+    """Negotiate TLS before reading the FTP welcome message."""
+
+    def connect(self, host="", port=0, timeout=-999, source_address=None):
+        if host:
+            self.host = host
+        if port:
+            self.port = port
+        if timeout != -999:
+            self.timeout = timeout
+        if source_address is not None:
+            self.source_address = source_address
+        self.sock = socket.create_connection(
+            (self.host, self.port), self.timeout, source_address=self.source_address
+        )
+        self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
+        self.af = self.sock.family
+        self.file = self.sock.makefile("r", encoding=self.encoding)
+        self.welcome = self.getresp()
+        return self.welcome
+
+    def auth(self):
+        return None
+
+
+def tls_context(version: str) -> ssl.SSLContext:
+    context = ssl.create_default_context()
+    versions = {"1.2": ssl.TLSVersion.TLSv1_2, "1.3": ssl.TLSVersion.TLSv1_3}
+    context.minimum_version = versions[version]
+    return context
+
+
+def create_ftp(
+    host: str,
+    port: int,
+    username: str,
+    password: str,
+    protocol: str,
+    transfer_mode: str,
+    charset: str,
+    tls_version: str,
+):
+    """Open a connection and apply the chosen security and transfer settings."""
+    if protocol not in {"plain", "explicit_optional", "explicit_required", "implicit"}:
+        raise ValueError(f"Unsupported protocol: {protocol}")
+    if transfer_mode not in {"passive", "active"}:
+        raise ValueError(f"Unsupported transfer mode: {transfer_mode}")
+    cls = ImplicitFTP_TLS if protocol == "implicit" else FTP if protocol == "plain" else FTP_TLS
+    kwargs = {"timeout": 30, "encoding": charset}
+    if cls is not FTP:
+        kwargs["context"] = tls_context(tls_version)
+    ftp = cls(**kwargs)
+    try:
+        ftp.connect(host, port)
+        protected = protocol == "implicit"
+        if protocol in {"explicit_optional", "explicit_required"}:
+            try:
+                ftp.auth()
+                protected = True
+            except error_perm as err:
+                if protocol != "explicit_optional" or not str(err).startswith(
+                    ("500", "502", "504")
+                ):
+                    raise
+                ftp.close()
+                ftp = FTP(timeout=30, encoding=charset)
+                ftp.connect(host, port)
+        ftp.login(username or "anonymous", password or "")
+        if protected:
+            ftp.prot_p()
+        ftp.set_pasv(transfer_mode == "passive")
+        return ftp
+    except Exception:
+        ftp.close()
+        raise
 
 
 class FtpConnection:
+    def __init__(self, client: "FtpClient"):
+        self.config = client
+        self.ftp = None
 
-    def __init__(self, host: str, port: str, username: str, password: str):
-        self.host = host
-        self.port = port
-        self.username = username
-        self.password = password
-        self._client = None
-
-    async def __aenter__(self) -> Client:
-        _LOGGER.info(
-            "Start FTP connection on %s@%s:%s",
-            self.username,
-            self.host,
-            self.port,
+    async def __aenter__(self):
+        c = self.config
+        self.ftp = await asyncio.to_thread(
+            create_ftp,
+            c.host,
+            c.port,
+            c.username,
+            c.password,
+            c.protocol,
+            c.transfer_mode,
+            c.charset,
+            c.tls_version,
         )
-        self._client = Client()
-        await self._client.connect(self.host, self.port)
-        if self.username and self.password:
-            await self._client.login(self.username, self.password)
-        return self._client
+        return self
 
-    async def __aexit__(self, exc_type, exc, tb) -> None:
-        if self._client and not exc:
+    async def __aexit__(self, exc_type, exc, tb):
+        if self.ftp:
             try:
-                await self._client.quit()
-                _LOGGER.info(
-                    "FTP connection on %s@%s:%s disconnected",
-                    self.username,
-                    self.host,
-                    self.port,
+                await asyncio.to_thread(self.ftp.quit)
+            except all_errors:
+                self.ftp.close()
+            self.ftp = None
+
+    async def is_dir(self, path: str) -> bool:
+        def check():
+            original = self.ftp.pwd()
+            try:
+                self.ftp.cwd(path)
+                return True
+            except all_errors:
+                return False
+            finally:
+                self.ftp.cwd(original)
+
+        return await asyncio.to_thread(check)
+
+    async def exists(self, path: str) -> bool:
+        if await self.is_dir(path):
+            return True
+        try:
+            return await asyncio.to_thread(self.ftp.size, path) is not None
+        except all_errors:
+            return False
+
+    async def make_directory(self, path: str) -> bool:
+        await asyncio.to_thread(self.ftp.mkd, path)
+        return True
+
+    async def list(self, path: str):
+        def listing():
+            if self.config.compatibility_mode:
+                names = self.ftp.nlst(path)
+            else:
+                names = [name for name, _ in self.ftp.mlsd(path)]
+            return [(PurePosixPath(path) / PurePosixPath(name).name, {}) for name in names]
+
+        return await asyncio.to_thread(listing)
+
+    async def remove(self, path: str):
+        await asyncio.to_thread(self.ftp.delete, path)
+
+    def upload_stream(self, path: str, on_progress=None):
+        return _UploadStream(self.ftp, path, on_progress)
+
+    def download_stream(self, path: str):
+        return _DownloadStream(self.ftp, path)
+
+
+class _UploadStream:
+    def __init__(self, ftp, path, on_progress=None):
+        self.ftp, self.path = ftp, path
+        self.on_progress = on_progress
+
+    async def __aenter__(self):
+        self.file = tempfile.TemporaryFile()
+        self.loop = asyncio.get_running_loop()
+        return self
+
+    async def write(self, block: bytes):
+        await asyncio.to_thread(self.file.write, block)
+
+    async def __aexit__(self, exc_type, exc, tb):
+        try:
+            if exc_type is None:
+                await asyncio.to_thread(self.file.seek, 0)
+                count = 0
+
+                def progress(block):
+                    nonlocal count
+                    count += len(block)
+                    if self.on_progress:
+                        self.loop.call_soon_threadsafe(
+                            partial(self.on_progress, bytes_uploaded=count)
+                        )
+
+                await asyncio.to_thread(
+                    self.ftp.storbinary,
+                    f"STOR {self.path}",
+                    self.file,
+                    CHUNK_SIZE,
+                    progress,
                 )
-            except AIOFTPException:
-                _LOGGER.debug(
-                    "Failed to properly quit FTP connection on %s@%s:%s",
-                    self.username,
-                    self.host,
-                    self.port,
-                )
-        self._client = None
+        finally:
+            self.file.close()
+
+
+class _DownloadStream:
+    def __init__(self, ftp, path):
+        self.ftp, self.path = ftp, path
+
+    async def __aenter__(self):
+        self.file = tempfile.TemporaryFile()
+        try:
+            await asyncio.to_thread(self.ftp.retrbinary, f"RETR {self.path}", self.file.write)
+            await asyncio.to_thread(self.file.seek, 0)
+        except Exception:
+            self.file.close()
+            raise
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        self.file.close()
+
+    async def read(self):
+        return await asyncio.to_thread(self.file.read)
+
+    async def iter_by_block(self):
+        while block := await asyncio.to_thread(self.file.read, CHUNK_SIZE):
+            yield block
 
 
 class FtpClient:
-
-    def __init__(self, hass: HomeAssistant, host: str, port: str, username: str, password: str):
-        self.hass = hass
-        self.host = host
-        self.port = port
-        self.username = username
-        self.password = password
+    def __init__(
+        self,
+        hass,
+        host,
+        port,
+        username,
+        password,
+        protocol="plain",
+        transfer_mode="passive",
+        charset="utf-8",
+        compatibility_mode=False,
+        tls_version="1.2",
+    ):
+        self.hass, self.host, self.port = hass, host, int(port)
+        self.username, self.password = username, password
+        self.protocol, self.transfer_mode = protocol, transfer_mode
+        self.charset, self.compatibility_mode = charset, compatibility_mode
+        self.tls_version = tls_version
 
     def connect(self) -> FtpConnection:
-        return FtpConnection(self.host, self.port, self.username, self.password)
+        return FtpConnection(self)
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"{self.username}@{self.host}:{self.port}"
 
 
-async def async_ensure_path_exists(client: Client, path: str) -> bool:
-    """Ensure that a path exists recursively on the FTP server."""
-    if await client.exists(path):
-        if not await client.is_dir(path):
-            _LOGGER.error("%s exists on FTP server but is not a directory", path)
-            return False
+async def async_ensure_path_exists(client: FtpConnection, path: str) -> bool:
+    """Create each missing directory in the remote path."""
+    if await client.is_dir(path):
         return True
-
-    _LOGGER.debug("%s directory does not exists on FTP server, create it", path)
-    parts = path.rstrip("/").split("/")
-    for i in range(1, len(parts) + 1):
-        sub_path = "/" if parts[:i] == [""] else "/".join(parts[:i])
-        _LOGGER.debug("Check '%s' directory on FTP server", str(sub_path))
-        try:
-            if await client.exists(sub_path):
-                if not await client.is_dir(sub_path):
-                    _LOGGER.error("%s exists on FTP server but is not a directory", sub_path)
-                    return False
-                _LOGGER.debug("%s directory already exists on FTP server", sub_path)
-            elif await client.make_directory(sub_path):
-                _LOGGER.debug("%s directory created on FTP server", sub_path)
-            else:
-                _LOGGER.error("Failed to create %s directory on FTP server", sub_path)
+    current = "/" if path.startswith("/") else ""
+    for part in PurePosixPath(path).parts:
+        if part == "/":
+            continue
+        current = str(PurePosixPath(current) / part)
+        if await client.exists(current):
+            if not await client.is_dir(current):
                 return False
-        except AIOFTPException:
-            _LOGGER.exception("Failed to ensure if %s directory exists on FTP server", sub_path)
-            return False
-
-    _LOGGER.info("%s directory create on FTP server", path)
+        else:
+            await client.make_directory(current)
     return True

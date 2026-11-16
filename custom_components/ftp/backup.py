@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator, Callable, Coroutine
 from functools import wraps
+from pathlib import PurePosixPath
 from time import time
 from typing import Any, Concatenate
 
-from aioftp.errors import AIOFTPException
-from aiohttp import ClientTimeout
+from ftplib import all_errors
 from homeassistant.components.backup import (
     AgentBackup,
     BackupAgent,
@@ -28,7 +28,6 @@ from .helpers import FtpConnection
 
 _LOGGER = logging.getLogger(__name__)
 
-BACKUP_TIMEOUT = ClientTimeout(connect=10, total=43200)
 CACHE_TTL = 300
 
 
@@ -72,7 +71,7 @@ def handle_backup_errors[_R, **P](
     async def wrapper(self: FtpBackupAgent, *args: P.args, **kwargs: P.kwargs) -> _R:
         try:
             return await func(self, *args, **kwargs)
-        except AIOFTPException as err:
+        except all_errors as err:
             _LOGGER.debug("Full error: %s", err, exc_info=True)
             raise BackupAgentError(
                 f"Backup operation failed: {err}",
@@ -114,6 +113,9 @@ class FtpBackupAgent(BackupAgent):
         """Return the path to the backup."""
         return self._entry.data.get(CONF_BACKUP_PATH, "")
 
+    def _remote_path(self, filename: str) -> str:
+        return str(PurePosixPath(self._backup_path) / filename)
+
     @handle_backup_errors
     async def async_download_backup(
         self,
@@ -131,7 +133,7 @@ class FtpBackupAgent(BackupAgent):
             async with self._client.connect() as connection:
                 backup = await self._find_backup_by_id(backup_id, connection)
                 async with connection.download_stream(
-                    f"{self._backup_path}/{suggested_filename(backup)}"
+                    self._remote_path(suggested_filenames(backup)[0])
                 ) as stream:
                     async for block in stream.iter_by_block():
                         yield block
@@ -144,6 +146,7 @@ class FtpBackupAgent(BackupAgent):
         *,
         open_stream: Callable[[], Coroutine[Any, Any, AsyncIterator[bytes]]],
         backup: AgentBackup,
+        on_progress: Callable[..., None],
         **kwargs: Any,
     ) -> None:
         """Upload a backup.
@@ -155,21 +158,31 @@ class FtpBackupAgent(BackupAgent):
 
         _LOGGER.info("Upload backup on %s", self._client)
         async with self._client.connect() as connection:
-            async with connection.upload_stream(f"{self._backup_path}/{filename_tar}") as stream:
-                async for block in await open_stream():
-                    await stream.write(block)
+            try:
+                async with connection.upload_stream(
+                    self._remote_path(filename_tar), on_progress
+                ) as stream:
+                    async for block in await open_stream():
+                        await stream.write(block)
+
+                async with connection.upload_stream(self._remote_path(filename_meta)) as stream:
+                    await stream.write(json_dumps(backup.as_dict()).encode("utf8"))
+            except Exception:
+                for filename in (filename_meta, filename_tar):
+                    try:
+                        await connection.remove(self._remote_path(filename))
+                    except all_errors:
+                        pass
+                raise
 
             _LOGGER.debug(
                 "Uploaded backup to %s",
-                f"{self._backup_path}/{filename_tar}",
+                self._remote_path(filename_tar),
             )
-
-            async with connection.upload_stream(f"{self._backup_path}/{filename_meta}") as stream:
-                await stream.write(json_dumps(backup.as_dict()).encode("utf8"))
 
             _LOGGER.debug(
                 "Uploaded metadata file for %s",
-                f"{self._backup_path}/{filename_meta}",
+                self._remote_path(filename_meta),
             )
 
         # reset cache
@@ -190,10 +203,10 @@ class FtpBackupAgent(BackupAgent):
             backup = await self._find_backup_by_id(backup_id, connection)
 
             (filename_tar, filename_meta) = suggested_filenames(backup)
-            backup_path = f"{self._backup_path}/{filename_tar}"
+            backup_path = self._remote_path(filename_tar)
 
             await connection.remove(backup_path)
-            await connection.remove(f"{self._backup_path}/{filename_meta}")
+            await connection.remove(self._remote_path(filename_meta))
 
         _LOGGER.debug(
             "Deleted backup at %s",

@@ -7,7 +7,13 @@
           "port": "Port",
           "username": "Nom d'utilisateur",
           "password": "Mot de passe",
-          "backup_path": "Chemin de stockage des sauvegardes"
+          "backup_path": "Chemin de stockage des sauvegardes",
+          "name": "Nom de la connexion",
+          "protocol": "Protocole",
+          "transfer_mode": "Mode de transfert",
+          "charset": "Encodage du serveur",
+          "compatibility_mode": "Mode de compatibilité (liste NLST)",
+          "tls_version": "Version TLS minimale"
         },
         "data_description": {
           "host": "Le nom d'hôte (ou l'adresse IP) du serveur FTP",
@@ -31,7 +37,13 @@
           "port": "Port",
           "username": "Nom d'utilisateur",
           "password": "Mot de passe",
-          "backup_path": "Chemin de stockage des sauvegardes"
+          "backup_path": "Chemin de stockage des sauvegardes",
+          "name": "Nom de la connexion",
+          "protocol": "Protocole",
+          "transfer_mode": "Mode de transfert",
+          "charset": "Encodage du serveur",
+          "compatibility_mode": "Mode de compatibilité (liste NLST)",
+          "tls_version": "Version TLS minimale"
         },
         "data_description": {
           "host": "Le nom d'hôte (ou l'adresse IP) du serveur FTP.",

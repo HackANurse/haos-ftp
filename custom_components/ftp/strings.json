@@ -7,7 +7,13 @@
           "port": "Port",
           "username": "Username",
           "password": "Password",
-          "backup_path": "Backups storage path"
+          "backup_path": "Backups storage path",
+          "name": "Connection name",
+          "protocol": "Protocol",
+          "transfer_mode": "Transfer mode",
+          "charset": "Server charset",
+          "compatibility_mode": "Compatibility mode (NLST listing)",
+          "tls_version": "Minimum TLS version"
         },
         "data_description": {
           "host": "The hostname (or IP address) of the FTP server",
@@ -31,7 +37,13 @@
           "port": "Port",
           "username": "Username",
           "password": "Password",
-          "backup_path": "Backups storage path"
+          "backup_path": "Backups storage path",
+          "name": "Connection name",
+          "protocol": "Protocol",
+          "transfer_mode": "Transfer mode",
+          "charset": "Server charset",
+          "compatibility_mode": "Compatibility mode (NLST listing)",
+          "tls_version": "Minimum TLS version"
         },
         "data_description": {
           "host": "The hostname (or IP address) of the FTP server.",

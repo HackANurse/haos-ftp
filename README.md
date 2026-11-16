@@ -1,4 +1,17 @@
-# FTP Backup agent for Home-Assistant
+# FTP/FTPS Backup agent for Home Assistant
+
+This is an updated version of [Benjamin Renard's hass-ftp](https://github.com/brenard/hass-ftp). The original author is Benjamin Renard (@brenard); his MIT copyright notice remains in [LICENSE](LICENSE).
+
+## Connection options
+
+- Protocol: plain FTP, explicit TLS when available, required explicit TLS, or required implicit TLS.
+- Passive or active FTP data connections.
+- Server charset: UTF-8, Latin-1, or Windows-1252.
+- Compatibility mode uses NLST rather than MLSD for directory listings.
+- TLS minimum version 1.2 or 1.3. Certificates are verified against the system CA store. The optional explicit TLS mode falls back to plain FTP only when the server rejects AUTH TLS as unsupported; choose required TLS to prohibit plaintext.
+- Custom connection name, host/IP, port, and backup directory. Implicit FTPS servers normally use port 990.
+
+The integration uploads, lists, downloads, and deletes Home Assistant backups. It reports upload progress while transferring to the FTP server. The current transport stages each transfer in a temporary file on the HAOS filesystem; make sure free temporary space is at least the size of the largest backup. Backups are not loaded into memory as one blob.
 
 This a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
 This integration allows you to store your backups on FTP server.
@@ -12,7 +25,7 @@ This integration allows you to store your backups on FTP server.
 
 Firstly, you have to add the following custom repository :
 
-- Repository : `https://github.com/brenard/hass-ftp`
+- Repository : `https://github.com/HackANurse/hass-ftp` (after this fork is published)
 - Category : _Integration_
 
 After, click on _Explore & download repositories_, search and install _FTP_
@@ -49,10 +62,10 @@ logger:
   default: warn
   logs:
     custom_components.ftp: debug
-    aioftp.client: debug
 ```
 
 Don't forget to restart Home Assistant after.
 
 **Note:** In development environment and you will be able to follow docker container logs by running
 the `./manage logs` command.
+
