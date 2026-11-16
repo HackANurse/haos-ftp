@@ -13,10 +13,8 @@ This is an updated version of [Benjamin Renard's hass-ftp](https://github.com/br
 
 The integration uploads, lists, downloads, and deletes Home Assistant backups. It reports upload progress while transferring to the FTP server. The current transport stages each transfer in a temporary file on the HAOS filesystem; make sure free temporary space is at least the size of the largest backup. Backups are not loaded into memory as one blob.
 
-This a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
-This integration allows you to store your backups on FTP server.
-
-**Note:** This integration was initially based on official Home Assistant
+This is a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
+The original integration was initially based on Home Assistant's
 [webdav](https://www.home-assistant.io/integrations/webdav/) integration.
 
 ## Installation
@@ -25,7 +23,7 @@ This integration allows you to store your backups on FTP server.
 
 Firstly, you have to add the following custom repository :
 
-- Repository : `https://github.com/HackANurse/hass-ftp` (after this fork is published)
+- Repository : `https://github.com/HackANurse/hass-ftp`
 - Category : _Integration_
 
 After, click on _Explore & download repositories_, search and install _FTP_
