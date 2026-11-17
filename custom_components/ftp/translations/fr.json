@@ -17,7 +17,8 @@
           "ca_file": "Chemin du certificat CA personnalisé",
           "client_cert": "Chemin du certificat client",
           "client_key": "Chemin de la clé privée du client",
-          "client_key_password": "Mot de passe de la clé privée"
+          "client_key_password": "Mot de passe de la clé privée",
+          "tls_server_name": "Nom du serveur dans le certificat TLS"
         },
         "data_description": {
           "host": "Le nom d'hôte (ou l'adresse IP) du serveur FTP",
@@ -25,7 +26,8 @@
           "ca_file": "Chemin absolu vers un fichier CA PEM, par exemple /config/ssl/ca.pem. Les CA du système restent approuvées.",
           "client_cert": "Chemin absolu vers un certificat client PEM. À configurer avec la clé privée.",
           "client_key": "Chemin absolu vers la clé privée PEM du certificat client.",
-          "client_key_password": "Mot de passe de la clé privée chiffrée ; laisser vide pour conserver le mot de passe lors de la modification."
+          "client_key_password": "Mot de passe de la clé privée chiffrée ; laisser vide pour conserver le mot de passe lors de la modification.",
+          "tls_server_name": "Nom d’hôte facultatif du certificat s’il diffère de l’adresse FTP. La vérification du certificat reste active."
         }
       }
     },
@@ -56,7 +58,8 @@
           "ca_file": "Chemin du certificat CA personnalisé",
           "client_cert": "Chemin du certificat client",
           "client_key": "Chemin de la clé privée du client",
-          "client_key_password": "Mot de passe de la clé privée"
+          "client_key_password": "Mot de passe de la clé privée",
+          "tls_server_name": "Nom du serveur dans le certificat TLS"
         },
         "data_description": {
           "host": "Le nom d'hôte (ou l'adresse IP) du serveur FTP.",
@@ -65,7 +68,8 @@
           "ca_file": "Chemin absolu vers un fichier CA PEM, par exemple /config/ssl/ca.pem. Les CA du système restent approuvées.",
           "client_cert": "Chemin absolu vers un certificat client PEM. À configurer avec la clé privée.",
           "client_key": "Chemin absolu vers la clé privée PEM du certificat client.",
-          "client_key_password": "Mot de passe de la clé privée chiffrée ; laisser vide pour conserver le mot de passe lors de la modification."
+          "client_key_password": "Mot de passe de la clé privée chiffrée ; laisser vide pour conserver le mot de passe lors de la modification.",
+          "tls_server_name": "Nom d’hôte facultatif du certificat s’il diffère de l’adresse FTP. La vérification du certificat reste active."
         }
       }
     },

@@ -35,6 +35,7 @@ from .const import (
     CONF_NAME,
     CONF_PROTOCOL,
     CONF_TLS_VERSION,
+    CONF_TLS_SERVER_NAME,
     CONF_TRANSFER_MODE,
     DOMAIN,
 )
@@ -58,6 +59,7 @@ class BaseFtpConfigFlow:
             charset=user_input.get(CONF_CHARSET, "utf-8"),
             compatibility_mode=user_input.get(CONF_COMPATIBILITY_MODE, False),
             tls_version=user_input.get(CONF_TLS_VERSION, "1.2"),
+            tls_server_name=user_input.get(CONF_TLS_SERVER_NAME, ""),
             ca_file=user_input.get(CONF_CA_FILE, ""),
             client_cert=user_input.get(CONF_CLIENT_CERT, ""),
             client_key=user_input.get(CONF_CLIENT_KEY, ""),
@@ -111,6 +113,9 @@ class BaseFtpConfigFlow:
                 vol.Required(CONF_TLS_VERSION, default=defaults.get(CONF_TLS_VERSION)): vol.In(
                     ["1.2", "1.3"]
                 ),
+                vol.Optional(
+                    CONF_TLS_SERVER_NAME, default=defaults.get(CONF_TLS_SERVER_NAME, "")
+                ): str,
                 vol.Optional(CONF_CA_FILE, default=defaults.get(CONF_CA_FILE, "")): str,
                 vol.Optional(CONF_CLIENT_CERT, default=defaults.get(CONF_CLIENT_CERT, "")): str,
                 vol.Optional(CONF_CLIENT_KEY, default=defaults.get(CONF_CLIENT_KEY, "")): str,

@@ -16,7 +16,7 @@ L'integrazione originale permette già di caricare, elencare, scaricare ed elimi
 | --- | --- | --- |
 | Sicurezza della connessione | FTP in chiaro | FTP in chiaro, FTPS esplicito facoltativo o obbligatorio, FTPS implicito |
 | Trasferimento dati | Modalità passiva con `aioftp` | Modalità passiva o attiva con `ftplib` di Python |
-| Certificati TLS | Nessuna impostazione | Verifica con CA di sistema, CA personalizzata facoltativa, certificato client, chiave privata e password per la chiave cifrata |
+| Certificati TLS | Nessuna impostazione | Verifica con CA di sistema, nome del server nel certificato configurabile, CA personalizzata facoltativa, certificato client, chiave privata e password per la chiave cifrata |
 | Compatibilità del server | UTF-8 ed elenchi tramite `aioftp` | Codifica UTF-8, Latin-1 o Windows-1252; modalità NLST facoltativa |
 | Caricamento dei backup | Presente | Avanzamento del caricamento tramite l'interfaccia attuale degli agenti di backup di Home Assistant e pulizia dopo un errore |
 | Scaricamento dei backup | Presente | Usa lo stesso nome `.tar` generato per il caricamento |
@@ -30,6 +30,7 @@ I trasferimenti passano per un file temporaneo: sul sistema deve esserci spazio 
 - Codifica del server: UTF-8, Latin-1 o Windows-1252.
 - Modalità compatibilità: usa NLST al posto di MLSD per elencare i file.
 - Versione minima TLS 1.2 o 1.3. I certificati del server vengono verificati tramite le CA di sistema.
+- Nome server nel certificato TLS facoltativo: permette di verificare il certificato con il nome del nodo FTP quando è diverso dall'indirizzo usato per collegarsi. La verifica TLS resta attiva.
 - File PEM facoltativi: CA personalizzata per verificare il server, certificato client e chiave privata per TLS reciproco, con eventuale password della chiave.
 - Nome della connessione, host/IP, porta e cartella dei backup configurabili. I server FTPS impliciti usano normalmente la porta 990.
 
@@ -37,11 +38,17 @@ Salva i file PEM in una posizione leggibile da Home Assistant, per esempio `/con
 
 La modalità «FTPS esplicito se disponibile» torna a FTP in chiaro solo se il server segnala che `AUTH TLS` non è supportato. Se imposti certificati personalizzati, il ripiego su FTP in chiaro è disabilitato. Per vietare sempre connessioni non cifrate, scegli una modalità TLS obbligatoria.
 
+### Server FTP Aruba
+
+Per un hosting Aruba, inserisci in **Indirizzo/IP** l'indirizzo FTP indicato nel pannello Aruba (per esempio `ftp.example.com`), con porta `21`, nome utente e password dell'account FTP. Scegli **FTPS esplicito obbligatorio**. Alcuni nodi Aruba presentano un certificato intestato al nome del nodo, diverso dall'indirizzo FTP del dominio: in **Nome server nel certificato TLS** indica il nome DNS presente nel certificato, per esempio `ftplnx02.aruba.it` *solo se è quello effettivamente presentato dal tuo server*. Il certificato continua a essere verificato; non è necessario disabilitare la verifica TLS.
+
+Per conoscere il nome del certificato, usa un client FTP che mostri i dettagli TLS oppure, da terminale, `openssl s_client -starttls ftp -connect ftp.example.com:21 -servername ftp.example.com`. Controlla il campo `subjectAltName` del certificato e verifica che il nome corrisponda al nodo Aruba a cui ti stai collegando. Per **Percorso dei backup**, inizia con una cartella relativa alla directory dell'account, per esempio `backup_ha`, senza `/` iniziale. Se la cartella non esiste, l'integrazione prova a crearla; l'account FTP deve avere permesso di scrittura. Il percorso `/` usa la cartella principale dell'account.
+
 L'integrazione carica, elenca, scarica ed elimina i backup di Home Assistant e mostra l'avanzamento del caricamento. I backup non vengono caricati interamente in memoria, ma il trasferimento richiede spazio temporaneo sul sistema almeno pari al backup più grande.
 
 ### Installazione
 
-Le versioni seguono il formato `aaaa.mm.nn`: anno, mese e progressivo a due cifre che riparte da `01` ogni mese. Per esempio, `2026.11.03` è il terzo rilascio di novembre 2026. Il numero della versione nel `manifest.json` coincide con il tag del rilascio GitHub.
+Le versioni seguono il formato `aaaa.mm.nn`: anno, mese e progressivo a due cifre che riparte da `01` ogni mese. Per esempio, `2026.11.04` è il quarto rilascio di novembre 2026. Il numero della versione nel `manifest.json` coincide con il tag del rilascio GitHub.
 
 #### Home Assistant 2026.11 o successivo: Marketplace
 
@@ -89,7 +96,7 @@ The original integration already provides a Home Assistant backup agent with FTP
 | --- | --- | --- |
 | Connection security | Plain FTP | Plain FTP, optional or required explicit FTPS, and implicit FTPS |
 | Data transfer | Passive mode through `aioftp` | Passive or active mode through Python's `ftplib` |
-| TLS certificates | No certificate settings | System CA verification, optional custom CA, client certificate, private key, and encrypted-key password |
+| TLS certificates | No certificate settings | System CA verification, configurable certificate server name, optional custom CA, client certificate, private key, and encrypted-key password |
 | Server compatibility | UTF-8 and `aioftp` listing behavior | Configurable UTF-8, Latin-1, or Windows-1252; optional NLST listing mode |
 | Backup upload | Supported | Progress reporting for the current Home Assistant backup-agent interface, plus cleanup after a failed upload |
 | Backup download | Supported | Uses the same generated `.tar` filename as upload |
@@ -103,10 +110,17 @@ The transport now stages each transfer in a temporary file. It needs free tempor
 - Server charset: UTF-8, Latin-1, or Windows-1252.
 - Compatibility mode uses NLST rather than MLSD for directory listings.
 - TLS minimum version 1.2 or 1.3. Certificates are verified against the system CA store. The optional explicit TLS mode falls back to plain FTP only when the server rejects AUTH TLS as unsupported; choose required TLS to prohibit plaintext.
+- Optional TLS certificate server name: verify the certificate against the FTP node's hostname when it differs from the address used to connect. Certificate validation remains enabled.
 - Optional PEM certificate files: a custom CA for server verification, plus a client certificate and private key for servers that require mutual TLS. An encrypted client key can have a password.
 - Custom connection name, host/IP, port, and backup directory. Implicit FTPS servers normally use port 990.
 
 Place PEM files in a path readable by Home Assistant, such as `/config/ssl/`, then enter their **absolute paths** in the integration's connection settings. Certificate contents and private keys are never stored in this repository. Client certificate and key paths must be provided together. A custom certificate configuration will never fall back to plain FTP, even when “explicit TLS if available” is selected. Certificate files are loaded at each new connection, so replacing them takes effect on the next backup operation.
+
+### Aruba FTP servers
+
+For Aruba hosting, enter the FTP address shown in your Aruba control panel (for example `ftp.example.com`) in **Host**, port `21`, and your FTP account credentials. Select **Required explicit FTPS**. Some Aruba nodes present a certificate for the node hostname rather than the domain FTP address. Enter the DNS name shown in that certificate under **TLS certificate server name**; `ftplnx02.aruba.it` is only an example and must match the certificate your server actually presents. This setting keeps TLS certificate validation enabled.
+
+You can inspect the certificate with an FTP client that shows TLS details or run `openssl s_client -starttls ftp -connect ftp.example.com:21 -servername ftp.example.com` and check `subjectAltName`. Start with a backup path relative to the FTP account directory, such as `backup_ha`, without a leading `/`. The integration attempts to create a missing directory, so the account needs write permission. Use `/` to store backups in the account's top-level directory.
 
 The integration uploads, lists, downloads, and deletes Home Assistant backups. It reports upload progress while transferring to the FTP server. The current transport stages each transfer in a temporary file on the HAOS filesystem; make sure free temporary space is at least the size of the largest backup. Backups are not loaded into memory as one blob.
 
@@ -116,7 +130,7 @@ The original integration was initially based on Home Assistant's
 
 ### Installation
 
-Versions use the `yyyy.mm.nn` format: year, month, and a two-digit sequence that starts again at `01` each month. For example, `2026.11.03` is the third release of November 2026. The version in `manifest.json` matches the GitHub release tag.
+Versions use the `yyyy.mm.nn` format: year, month, and a two-digit sequence that starts again at `01` each month. For example, `2026.11.04` is the fourth release of November 2026. The version in `manifest.json` matches the GitHub release tag.
 
 #### Home Assistant 2026.11 and later: Marketplace
 

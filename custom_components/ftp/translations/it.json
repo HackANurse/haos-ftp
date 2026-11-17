@@ -17,7 +17,8 @@
           "ca_file": "Percorso certificato CA personalizzato",
           "client_cert": "Percorso certificato client",
           "client_key": "Percorso chiave privata client",
-          "client_key_password": "Password della chiave privata"
+          "client_key_password": "Password della chiave privata",
+          "tls_server_name": "Nome server nel certificato TLS"
         },
         "data_description": {
           "host": "Nome host o indirizzo IP del server FTP.",
@@ -26,7 +27,8 @@
           "client_cert": "Percorso assoluto del certificato client PEM; richiede anche la chiave privata.",
           "client_key": "Percorso assoluto della chiave privata PEM del certificato client.",
           "client_key_password": "Password della chiave privata cifrata; durante la modifica lascia vuoto per mantenere quella attuale.",
-          "password": "Lascia vuoto per mantenere la password già configurata."
+          "password": "Lascia vuoto per mantenere la password già configurata.",
+          "tls_server_name": "Nome host facoltativo presente nel certificato quando è diverso dall’indirizzo FTP. La verifica del certificato resta attiva."
         }
       }
     },
@@ -57,7 +59,8 @@
           "ca_file": "Percorso certificato CA personalizzato",
           "client_cert": "Percorso certificato client",
           "client_key": "Percorso chiave privata client",
-          "client_key_password": "Password della chiave privata"
+          "client_key_password": "Password della chiave privata",
+          "tls_server_name": "Nome server nel certificato TLS"
         },
         "data_description": {
           "host": "Nome host o indirizzo IP del server FTP.",
@@ -66,7 +69,8 @@
           "ca_file": "Percorso assoluto di un certificato CA PEM, ad esempio /config/ssl/ca.pem. Le CA di sistema restano attendibili.",
           "client_cert": "Percorso assoluto del certificato client PEM; richiede anche la chiave privata.",
           "client_key": "Percorso assoluto della chiave privata PEM del certificato client.",
-          "client_key_password": "Password della chiave privata cifrata; durante la modifica lascia vuoto per mantenere quella attuale."
+          "client_key_password": "Password della chiave privata cifrata; durante la modifica lascia vuoto per mantenere quella attuale.",
+          "tls_server_name": "Nome host facoltativo presente nel certificato quando è diverso dall’indirizzo FTP. La verifica del certificato resta attiva."
         }
       }
     },

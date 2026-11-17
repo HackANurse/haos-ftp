@@ -17,7 +17,8 @@
           "ca_file": "Custom CA certificate path",
           "client_cert": "Client certificate path",
           "client_key": "Client private key path",
-          "client_key_password": "Private key password"
+          "client_key_password": "Private key password",
+          "tls_server_name": "TLS certificate server name"
         },
         "data_description": {
           "host": "The hostname (or IP address) of the FTP server",
@@ -25,7 +26,8 @@
           "ca_file": "Absolute path to a PEM CA file, for example /config/ssl/ca.pem. System CA certificates remain trusted.",
           "client_cert": "Absolute path to a PEM client certificate. Configure together with the private key.",
           "client_key": "Absolute path to the PEM private key for the client certificate.",
-          "client_key_password": "Password for an encrypted private key; leave empty to keep the current password when editing."
+          "client_key_password": "Password for an encrypted private key; leave empty to keep the current password when editing.",
+          "tls_server_name": "Optional hostname on the server certificate when it differs from the FTP address. Certificate validation remains enabled."
         }
       }
     },
@@ -56,7 +58,8 @@
           "ca_file": "Custom CA certificate path",
           "client_cert": "Client certificate path",
           "client_key": "Client private key path",
-          "client_key_password": "Private key password"
+          "client_key_password": "Private key password",
+          "tls_server_name": "TLS certificate server name"
         },
         "data_description": {
           "host": "The hostname (or IP address) of the FTP server.",
@@ -65,7 +68,8 @@
           "ca_file": "Absolute path to a PEM CA file, for example /config/ssl/ca.pem. System CA certificates remain trusted.",
           "client_cert": "Absolute path to a PEM client certificate. Configure together with the private key.",
           "client_key": "Absolute path to the PEM private key for the client certificate.",
-          "client_key_password": "Password for an encrypted private key; leave empty to keep the current password when editing."
+          "client_key_password": "Password for an encrypted private key; leave empty to keep the current password when editing.",
+          "tls_server_name": "Optional hostname on the server certificate when it differs from the FTP address. Certificate validation remains enabled."
         }
       }
     },

@@ -20,6 +20,10 @@ class CertificateConfigurationError(OSError):
 class ImplicitFTP_TLS(FTP_TLS):
     """Negotiate TLS before reading the FTP welcome message."""
 
+    def __init__(self, *args, tls_server_name="", **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tls_server_name = tls_server_name
+
     def connect(self, host="", port=0, timeout=-999, source_address=None):
         if host:
             self.host = host
@@ -32,7 +36,11 @@ class ImplicitFTP_TLS(FTP_TLS):
         self.sock = socket.create_connection(
             (self.host, self.port), self.timeout, source_address=self.source_address
         )
-        self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
+        self.sock = self.context.wrap_socket(
+            self.sock, server_hostname=self.tls_server_name or self.host
+        )
+        if self.tls_server_name:
+            self.host = self.tls_server_name
         self.af = self.sock.family
         self.file = self.sock.makefile("r", encoding=self.encoding)
         self.welcome = self.getresp()
@@ -92,13 +100,16 @@ def create_ftp(
     client_cert: str = "",
     client_key: str = "",
     client_key_password: str = "",
+    tls_server_name: str = "",
 ):
     """Open a connection and apply the chosen security and transfer settings."""
     if protocol not in {"plain", "explicit_optional", "explicit_required", "implicit"}:
         raise ValueError(f"Unsupported protocol: {protocol}")
     if transfer_mode not in {"passive", "active"}:
         raise ValueError(f"Unsupported transfer mode: {transfer_mode}")
-    if protocol == "plain" and any((ca_file, client_cert, client_key, client_key_password)):
+    if protocol == "plain" and any(
+        (ca_file, client_cert, client_key, client_key_password, tls_server_name)
+    ):
         raise CertificateConfigurationError("Certificate settings require an FTPS protocol")
     cls = ImplicitFTP_TLS if protocol == "implicit" else FTP if protocol == "plain" else FTP_TLS
     kwargs = {"timeout": 30, "encoding": charset}
@@ -106,9 +117,13 @@ def create_ftp(
         kwargs["context"] = tls_context(
             tls_version, ca_file, client_cert, client_key, client_key_password
         )
+    if protocol == "implicit":
+        kwargs["tls_server_name"] = tls_server_name
     ftp = cls(**kwargs)
     try:
         ftp.connect(host, port)
+        if tls_server_name and protocol != "implicit":
+            ftp.host = tls_server_name
         protected = protocol == "implicit"
         if protocol in {"explicit_optional", "explicit_required"}:
             try:
@@ -117,7 +132,7 @@ def create_ftp(
             except error_perm as err:
                 if (
                     protocol != "explicit_optional"
-                    or any((ca_file, client_cert, client_key, client_key_password))
+                    or any((ca_file, client_cert, client_key, client_key_password, tls_server_name))
                     or not str(err).startswith(("500", "502", "504"))
                 ):
                     raise
@@ -155,6 +170,7 @@ class FtpConnection:
             c.client_cert,
             c.client_key,
             c.client_key_password,
+            c.tls_server_name,
         )
         return self
 
@@ -291,6 +307,7 @@ class FtpClient:
         client_cert="",
         client_key="",
         client_key_password="",
+        tls_server_name="",
     ):
         self.hass, self.host, self.port = hass, host, int(port)
         self.username, self.password = username, password
@@ -301,6 +318,7 @@ class FtpClient:
         self.client_cert = client_cert
         self.client_key = client_key
         self.client_key_password = client_key_password
+        self.tls_server_name = tls_server_name
 
     def connect(self) -> FtpConnection:
         return FtpConnection(self)

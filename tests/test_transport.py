@@ -224,6 +224,47 @@ def test_default_context_verifies_server_certificate_and_hostname():
     assert context.check_hostname
 
 
+def test_explicit_ftps_uses_certificate_name_while_connecting_to_official_host():
+    class HostAwareFTP(FakeFTP):
+        def connect(self, host, port):
+            self.connected_host = host
+            self.host = host
+
+        def auth(self):
+            self.tls_host = self.host
+
+    with patch.object(helpers, "FTP_TLS", HostAwareFTP):
+        ftp = helpers.create_ftp(
+            "ftp.example.org",
+            21,
+            "user",
+            "secret",
+            "explicit_required",
+            "passive",
+            "utf-8",
+            "1.2",
+            tls_server_name="backend.example.org",
+        )
+    assert ftp.connected_host == "ftp.example.org"
+    assert ftp.tls_host == "backend.example.org"
+    assert ftp.kwargs["context"].check_hostname
+
+
+def test_tls_server_name_cannot_be_used_with_plain_ftp():
+    with pytest.raises(helpers.CertificateConfigurationError):
+        helpers.create_ftp(
+            "ftp.example.org",
+            21,
+            "user",
+            "secret",
+            "plain",
+            "passive",
+            "utf-8",
+            "1.2",
+            tls_server_name="backend.example.org",
+        )
+
+
 def test_missing_ca_file_is_a_certificate_configuration_error():
     with pytest.raises(helpers.CertificateConfigurationError):
         helpers.tls_context("1.2", "/config/ssl/missing-ca-for-test.pem")
