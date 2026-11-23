@@ -233,36 +233,63 @@ class _UploadStream:
         self.on_progress = on_progress
 
     async def __aenter__(self):
-        self.file = tempfile.TemporaryFile()
         self.loop = asyncio.get_running_loop()
+        self.blocks = asyncio.Queue(maxsize=8)
+        self.started = asyncio.Event()
+
+        class Reader:
+            def __init__(reader_self):
+                reader_self.pending = b""
+
+            def read(reader_self, size):
+                while not reader_self.pending:
+                    block = asyncio.run_coroutine_threadsafe(self.blocks.get(), self.loop).result()
+                    if block is None:
+                        return b""
+                    reader_self.pending = block
+                result, reader_self.pending = (
+                    reader_self.pending[:size],
+                    reader_self.pending[size:],
+                )
+                return result
+
+        def upload():
+            self.loop.call_soon_threadsafe(self.started.set)
+            count = 0
+
+            def progress(block):
+                nonlocal count
+                count += len(block)
+                if self.on_progress:
+                    self.loop.call_soon_threadsafe(partial(self.on_progress, bytes_uploaded=count))
+
+            self.ftp.storbinary(f"STOR {self.path}", Reader(), CHUNK_SIZE, progress)
+
+        self.task = asyncio.create_task(asyncio.to_thread(upload))
+        await self.started.wait()
         return self
 
     async def write(self, block: bytes):
-        await asyncio.to_thread(self.file.write, block)
+        if self.task.done():
+            await self.task
+        pending_put = asyncio.create_task(self.blocks.put(block))
+        done, _ = await asyncio.wait((pending_put, self.task), return_when=asyncio.FIRST_COMPLETED)
+        if self.task in done:
+            pending_put.cancel()
+            await self.task
+            raise OSError("FTP upload stopped before the backup stream finished")
+        await pending_put
 
     async def __aexit__(self, exc_type, exc, tb):
-        try:
-            if exc_type is None:
-                await asyncio.to_thread(self.file.seek, 0)
-                count = 0
-
-                def progress(block):
-                    nonlocal count
-                    count += len(block)
-                    if self.on_progress:
-                        self.loop.call_soon_threadsafe(
-                            partial(self.on_progress, bytes_uploaded=count)
-                        )
-
-                await asyncio.to_thread(
-                    self.ftp.storbinary,
-                    f"STOR {self.path}",
-                    self.file,
-                    CHUNK_SIZE,
-                    progress,
-                )
-        finally:
-            self.file.close()
+        if not self.task.done():
+            await self.blocks.put(None)
+        if exc_type is None:
+            await self.task
+        else:
+            try:
+                await self.task
+            except Exception:
+                pass
 
 
 class _DownloadStream:
