@@ -2,6 +2,7 @@
 
 import importlib.util
 import asyncio
+import threading
 from ftplib import error_perm
 from pathlib import Path
 from unittest.mock import patch
@@ -125,6 +126,41 @@ def test_upload_reports_transferred_bytes():
 
     asyncio.run(run())
     assert reports[-1] == {"bytes_uploaded": 12}
+
+
+def test_upload_starts_before_the_source_stream_finishes():
+    started = threading.Event()
+    received = bytearray()
+
+    class Transport:
+        def storbinary(self, command, file, blocksize, callback):
+            started.set()
+            while block := file.read(blocksize):
+                received.extend(block)
+                callback(block)
+
+    async def run():
+        async with helpers._UploadStream(Transport(), "/backup.tar") as stream:
+            await stream.write(b"first")
+            assert started.is_set(), "FTP upload waited for the entire backup to be buffered"
+            await stream.write(b"second")
+
+    asyncio.run(run())
+    assert received == b"firstsecond"
+
+
+def test_upload_reports_transport_failure_while_source_is_streaming():
+    class Transport:
+        def storbinary(self, command, file, blocksize, callback):
+            raise OSError("connection closed")
+
+    async def run():
+        async with helpers._UploadStream(Transport(), "/backup.tar") as stream:
+            for _ in range(20):
+                await stream.write(b"x" * 256)
+
+    with pytest.raises(OSError, match="connection closed"):
+        asyncio.run(asyncio.wait_for(run(), timeout=2))
 
 
 def test_compatibility_listing_uses_nlst():
