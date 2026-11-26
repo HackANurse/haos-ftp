@@ -11,6 +11,7 @@ from functools import partial
 from pathlib import Path, PurePosixPath
 
 CHUNK_SIZE = 256 * 1024
+UPLOAD_RESPONSE_TIMEOUT = 600
 
 
 class CertificateConfigurationError(OSError):
@@ -263,7 +264,17 @@ class _UploadStream:
                 if self.on_progress:
                     self.loop.call_soon_threadsafe(partial(self.on_progress, bytes_uploaded=count))
 
-            self.ftp.storbinary(f"STOR {self.path}", Reader(), CHUNK_SIZE, progress)
+            # Large FTPS uploads may take the server longer than the connection's
+            # 30-second timeout to commit after the data socket closes.
+            control_socket = getattr(self.ftp, "sock", None)
+            previous_timeout = control_socket.gettimeout() if control_socket else None
+            try:
+                if control_socket:
+                    control_socket.settimeout(UPLOAD_RESPONSE_TIMEOUT)
+                self.ftp.storbinary(f"STOR {self.path}", Reader(), CHUNK_SIZE, progress)
+            finally:
+                if control_socket and self.ftp.sock is control_socket:
+                    control_socket.settimeout(previous_timeout)
 
         self.task = asyncio.create_task(asyncio.to_thread(upload))
         await self.started.wait()
