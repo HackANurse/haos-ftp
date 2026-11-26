@@ -72,7 +72,7 @@ def handle_backup_errors[_R, **P](
         try:
             return await func(self, *args, **kwargs)
         except all_errors as err:
-            _LOGGER.debug("Full error: %s", err, exc_info=True)
+            _LOGGER.exception("FTP backup operation %s failed", func.__name__)
             raise BackupAgentError(
                 f"Backup operation failed: {err}",
             ) from err
