@@ -163,6 +163,36 @@ def test_upload_reports_transport_failure_while_source_is_streaming():
         asyncio.run(asyncio.wait_for(run(), timeout=2))
 
 
+def test_upload_allows_server_time_to_finalize_large_transfer():
+    class Socket:
+        def __init__(self):
+            self.timeout = 30
+
+        def gettimeout(self):
+            return self.timeout
+
+        def settimeout(self, value):
+            self.timeout = value
+
+    class Transport:
+        def __init__(self):
+            self.sock = Socket()
+
+        def storbinary(self, command, file, blocksize, callback):
+            while block := file.read(blocksize):
+                callback(block)
+            assert self.sock.gettimeout() == helpers.UPLOAD_RESPONSE_TIMEOUT
+
+    transport = Transport()
+
+    async def run():
+        async with helpers._UploadStream(transport, "/backup.tar") as stream:
+            await stream.write(b"backup data")
+
+    asyncio.run(run())
+    assert transport.sock.gettimeout() == 30
+
+
 def test_compatibility_listing_uses_nlst():
     class Transport:
         def nlst(self, path):
