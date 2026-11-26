@@ -18,7 +18,7 @@ L'integrazione originale permette già di caricare, elencare, scaricare ed elimi
 | Trasferimento dati | Modalità passiva con `aioftp` | Modalità passiva o attiva con `ftplib` di Python |
 | Certificati TLS | Nessuna impostazione | Verifica con CA di sistema, nome del server nel certificato configurabile, CA personalizzata facoltativa, certificato client, chiave privata e password per la chiave cifrata |
 | Compatibilità del server | UTF-8 ed elenchi tramite `aioftp` | Codifica UTF-8, Latin-1 o Windows-1252; modalità NLST facoltativa |
-| Caricamento dei backup | Presente | Trasferimento in streaming, avanzamento tramite l'interfaccia attuale degli agenti di backup di Home Assistant e pulizia dopo un errore |
+| Caricamento dei backup | Presente | Trasferimento in streaming, attesa fino a 10 minuti della conferma finale del server per backup grandi, avanzamento tramite l'interfaccia attuale degli agenti di backup di Home Assistant e pulizia dopo un errore |
 | Scaricamento dei backup | Presente | Usa lo stesso nome `.tar` generato per il caricamento |
 
 Il caricamento invia i blocchi al server mentre Home Assistant produce il backup, evitando di tenere inattiva la connessione durante la copia in un file temporaneo. Lo scaricamento usa ancora un file temporaneo e richiede spazio libero almeno pari alla dimensione del backup. Questa versione aggiunge anche test automatici per il trasporto ed etichette di configurazione in italiano.
@@ -48,7 +48,7 @@ L'integrazione carica, elenca, scarica ed elimina i backup di Home Assistant e m
 
 ### Installazione
 
-Le versioni seguono il formato `aaaa.mm.nn`: anno, mese e progressivo a due cifre che riparte da `01` ogni mese. Per esempio, `2026.11.06` è il sesto rilascio di novembre 2026. Il numero della versione nel `manifest.json` coincide con il tag del rilascio GitHub.
+Le versioni seguono il formato `aaaa.mm.nn`: anno, mese e progressivo a due cifre che riparte da `01` ogni mese. Per esempio, `2026.11.07` è il settimo rilascio di novembre 2026. Il numero della versione nel `manifest.json` coincide con il tag del rilascio GitHub.
 
 #### Home Assistant 2026.11 o successivo: Marketplace
 
@@ -98,7 +98,7 @@ The original integration already provides a Home Assistant backup agent with FTP
 | Data transfer | Passive mode through `aioftp` | Passive or active mode through Python's `ftplib` |
 | TLS certificates | No certificate settings | System CA verification, configurable certificate server name, optional custom CA, client certificate, private key, and encrypted-key password |
 | Server compatibility | UTF-8 and `aioftp` listing behavior | Configurable UTF-8, Latin-1, or Windows-1252; optional NLST listing mode |
-| Backup upload | Supported | Streaming transfer, progress reporting for the current Home Assistant backup-agent interface, and cleanup after a failed upload |
+| Backup upload | Supported | Streaming transfer, up to 10 minutes for the server's final confirmation on large backups, progress reporting for the current Home Assistant backup-agent interface, and cleanup after a failed upload |
 | Backup download | Supported | Uses the same generated `.tar` filename as upload |
 
 Uploads send blocks to the server as Home Assistant produces them, avoiding an idle connection while a full backup is staged. Downloads still use a temporary file and need free temporary space at least as large as the backup. The fork also adds automated transport tests and Italian configuration labels.
@@ -130,7 +130,7 @@ The original integration was initially based on Home Assistant's
 
 ### Installation
 
-Versions use the `yyyy.mm.nn` format: year, month, and a two-digit sequence that starts again at `01` each month. For example, `2026.11.06` is the sixth release of November 2026. The version in `manifest.json` matches the GitHub release tag.
+Versions use the `yyyy.mm.nn` format: year, month, and a two-digit sequence that starts again at `01` each month. For example, `2026.11.07` is the seventh release of November 2026. The version in `manifest.json` matches the GitHub release tag.
 
 #### Home Assistant 2026.11 and later: Marketplace
 
