@@ -18,10 +18,10 @@ L'integrazione originale permette già di caricare, elencare, scaricare ed elimi
 | Trasferimento dati | Modalità passiva con `aioftp` | Modalità passiva o attiva con `ftplib` di Python |
 | Certificati TLS | Nessuna impostazione | Verifica con CA di sistema, nome del server nel certificato configurabile, CA personalizzata facoltativa, certificato client, chiave privata e password per la chiave cifrata |
 | Compatibilità del server | UTF-8 ed elenchi tramite `aioftp` | Codifica UTF-8, Latin-1 o Windows-1252; modalità NLST facoltativa |
-| Caricamento dei backup | Presente | Avanzamento del caricamento tramite l'interfaccia attuale degli agenti di backup di Home Assistant e pulizia dopo un errore |
+| Caricamento dei backup | Presente | Trasferimento in streaming, avanzamento tramite l'interfaccia attuale degli agenti di backup di Home Assistant e pulizia dopo un errore |
 | Scaricamento dei backup | Presente | Usa lo stesso nome `.tar` generato per il caricamento |
 
-I trasferimenti passano per un file temporaneo: sul sistema deve esserci spazio temporaneo libero almeno pari alla dimensione del backup. Questa versione aggiunge anche test automatici per il trasporto ed etichette di configurazione in italiano.
+Il caricamento invia i blocchi al server mentre Home Assistant produce il backup, evitando di tenere inattiva la connessione durante la copia in un file temporaneo. Lo scaricamento usa ancora un file temporaneo e richiede spazio libero almeno pari alla dimensione del backup. Questa versione aggiunge anche test automatici per il trasporto ed etichette di configurazione in italiano.
 
 ### Opzioni di connessione e certificati
 
@@ -44,11 +44,11 @@ Per un hosting Aruba, inserisci in **Indirizzo/IP** l'indirizzo FTP del dominio 
 
 Per conoscere il nome del certificato, usa un client FTP che mostri i dettagli TLS oppure, da terminale, `openssl s_client -connect ftp.example.com:990 -servername ftp.example.com` per FTPS implicito (usa `-starttls ftp -connect ftp.example.com:21` per TLS esplicito). Controlla il campo `subjectAltName` del certificato e verifica che il nome corrisponda al nodo Aruba a cui ti stai collegando. Per **Percorso dei backup**, inizia con una cartella relativa alla directory dell'account, per esempio `backup_ha`, senza `/` iniziale. Se la cartella non esiste, l'integrazione prova a crearla; l'account FTP deve avere permesso di scrittura. Il percorso `/` usa la cartella principale dell'account. Se una voce già in errore resta rossa dopo aver salvato le opzioni, usa il menu della voce → **Ricarica**.
 
-L'integrazione carica, elenca, scarica ed elimina i backup di Home Assistant e mostra l'avanzamento del caricamento. I backup non vengono caricati interamente in memoria, ma il trasferimento richiede spazio temporaneo sul sistema almeno pari al backup più grande.
+L'integrazione carica, elenca, scarica ed elimina i backup di Home Assistant e mostra l'avanzamento del caricamento. Il caricamento usa una coda limitata di blocchi, senza duplicare l'intero backup nella memoria o in un file temporaneo. Per lo scaricamento serve spazio temporaneo libero almeno pari al backup da ripristinare.
 
 ### Installazione
 
-Le versioni seguono il formato `aaaa.mm.nn`: anno, mese e progressivo a due cifre che riparte da `01` ogni mese. Per esempio, `2026.11.05` è il quinto rilascio di novembre 2026. Il numero della versione nel `manifest.json` coincide con il tag del rilascio GitHub.
+Le versioni seguono il formato `aaaa.mm.nn`: anno, mese e progressivo a due cifre che riparte da `01` ogni mese. Per esempio, `2026.11.06` è il sesto rilascio di novembre 2026. Il numero della versione nel `manifest.json` coincide con il tag del rilascio GitHub.
 
 #### Home Assistant 2026.11 o successivo: Marketplace
 
@@ -98,10 +98,10 @@ The original integration already provides a Home Assistant backup agent with FTP
 | Data transfer | Passive mode through `aioftp` | Passive or active mode through Python's `ftplib` |
 | TLS certificates | No certificate settings | System CA verification, configurable certificate server name, optional custom CA, client certificate, private key, and encrypted-key password |
 | Server compatibility | UTF-8 and `aioftp` listing behavior | Configurable UTF-8, Latin-1, or Windows-1252; optional NLST listing mode |
-| Backup upload | Supported | Progress reporting for the current Home Assistant backup-agent interface, plus cleanup after a failed upload |
+| Backup upload | Supported | Streaming transfer, progress reporting for the current Home Assistant backup-agent interface, and cleanup after a failed upload |
 | Backup download | Supported | Uses the same generated `.tar` filename as upload |
 
-The transport now stages each transfer in a temporary file. It needs free temporary disk space at least as large as the backup. The fork also adds automated transport tests and Italian configuration labels.
+Uploads send blocks to the server as Home Assistant produces them, avoiding an idle connection while a full backup is staged. Downloads still use a temporary file and need free temporary space at least as large as the backup. The fork also adds automated transport tests and Italian configuration labels.
 
 ### Connection options
 
@@ -122,7 +122,7 @@ For Aruba hosting, enter the domain FTP address shown in your Aruba control pane
 
 You can inspect the certificate with an FTP client that shows TLS details or run `openssl s_client -connect ftp.example.com:990 -servername ftp.example.com` for implicit FTPS (use `-starttls ftp -connect ftp.example.com:21` for explicit TLS) and check `subjectAltName`. Start with a backup path relative to the FTP account directory, such as `backup_ha`, without a leading `/`. The integration attempts to create a missing directory, so the account needs write permission. Use `/` to store backups in the account's top-level directory. If an entry in an error state stays red after saving options, use the entry menu → **Reload**.
 
-The integration uploads, lists, downloads, and deletes Home Assistant backups. It reports upload progress while transferring to the FTP server. The current transport stages each transfer in a temporary file on the HAOS filesystem; make sure free temporary space is at least the size of the largest backup. Backups are not loaded into memory as one blob.
+The integration uploads, lists, downloads, and deletes Home Assistant backups. It reports upload progress while transferring to the FTP server. Uploads use a bounded queue rather than staging the entire backup in a temporary file or memory. Downloads still require temporary space at least as large as the backup.
 
 This is a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
 The original integration was initially based on Home Assistant's
@@ -130,7 +130,7 @@ The original integration was initially based on Home Assistant's
 
 ### Installation
 
-Versions use the `yyyy.mm.nn` format: year, month, and a two-digit sequence that starts again at `01` each month. For example, `2026.11.04` is the fourth release of November 2026. The version in `manifest.json` matches the GitHub release tag.
+Versions use the `yyyy.mm.nn` format: year, month, and a two-digit sequence that starts again at `01` each month. For example, `2026.11.06` is the sixth release of November 2026. The version in `manifest.json` matches the GitHub release tag.
 
 #### Home Assistant 2026.11 and later: Marketplace
 
